@@ -83,7 +83,8 @@
         verify,
         'Open the downloaded Setup file.',
         smartScreen,
-        `Finish Setup and open Hum. ${ready}`
+        'Setup installs Hum for your Windows account only, with no administrator rights, and adds it to the Start menu. When it finishes, open Hum from the Start menu if Setup didn’t open it for you.',
+        ready
       ];
     }
     return [
@@ -93,6 +94,23 @@
       'Open System Settings, go to Privacy & Security, scroll to Security, and choose “Open Anyway” next to Hum. It appears after your first try. Confirm when macOS asks.',
       `Open Hum again. It will tell you what is still missing (speech model, microphone, Accessibility) and offer each fix. The speech model is ${SPEECH_MODEL_SIZE}.`
     ];
+  }
+
+  // Other files of the same release (for example a portable ZIP next to Setup). Each must pass
+  // the same URL, checksum and file-name rules as the main download, or it is left out.
+  function alternativesOf(platform, entry, kind) {
+    if (!isObject(entry) || !Array.isArray(entry.alternatives)) return [];
+    return entry.alternatives.filter((alt) => isObject(alt) && typeof alt.label === 'string' &&
+      alt.label.trim() && alt.label.trim().length <= 80 && Boolean(safeHttps(alt.download_url)) &&
+      hasChecksum(alt) && Boolean(fileNameOf(alt)))
+      .map((alt) => {
+        const fileName = fileNameOf(alt);
+        return {
+          label: alt.label.trim(), url: safeHttps(alt.download_url), fileName,
+          size: formatBytes(alt.size_bytes), sha256: alt.sha256.toLowerCase(),
+          steps: kind === 'prerelease' ? firstRunSteps(platform, fileName) : []
+        };
+      });
   }
 
   // Everything one platform panel needs to show, for any of the three states.
@@ -112,7 +130,8 @@
       url: safeHttps(entry.download_url), version, fileName,
       sha256: entry.sha256.toLowerCase(),
       size: formatBytes(entry.size_bytes),
-      notesUrl: safeHttps(entry.notes_url)
+      notesUrl: safeHttps(entry.notes_url),
+      alternatives: alternativesOf(platform, entry, kind)
     };
     if (kind === 'release') {
       view.statusLabel = 'Available now';
@@ -158,7 +177,7 @@
     if (!released.length) {
       return {
         hero,
-        introduction: `An unsigned pre-release is available for ${list(pre)}. It is test software: read the first-run steps below and compare the SHA-256 before you open it.`,
+        introduction: `An unsigned pre-release is available for ${list(pre)}. It is test software: install it with the one-line command below, or download it and follow the first-run steps.`,
         answer: `Not as a finished release. An unsigned pre-release for ${list(pre)} is linked in the download section above, for people who want to test it.${still} Each download shows its SHA-256 checksum and first-run steps.`
       };
     }
@@ -176,6 +195,36 @@
       isObject(data.platforms.macos) && isObject(data.platforms.windows);
   }
 
+  // One-line installers (dist/install.ps1 and dist/install.sh). They pin the same release this
+  // manifest offers (tools/generate-install-scripts.js), so the command shows only when the
+  // platform offers a download.
+  const INSTALLERS = {
+    windows: {
+      command: 'irm https://muppio.github.io/hum-testers/install.ps1 | iex',
+      where: 'Open PowerShell (search for it in the Start menu) and paste:',
+      script: './install.ps1',
+      shell: 'PowerShell',
+      does: (version) => `It downloads Hum ${version} from its GitHub release, checks its SHA-256, installs it for your Windows account only, and opens it.`
+    },
+    macos: {
+      command: 'curl -fsSL https://muppio.github.io/hum-testers/install.sh | bash',
+      where: 'Open Terminal and paste:',
+      script: './install.sh',
+      shell: 'Terminal',
+      does: (version) => `It downloads Hum ${version} from its GitHub release, checks its SHA-256, puts it in your Applications folder, and opens it.`
+    }
+  };
+
+  function installView(platform, info) {
+    const { kind, entry } = platformState(platform, info);
+    if (kind === 'none') return null;
+    const installer = INSTALLERS[platform];
+    return {
+      command: installer.command, where: installer.where, script: installer.script, shell: installer.shell,
+      explanation: installer.does(entry.version.trim())
+    };
+  }
+
   // The visitor's own system: Windows if the browser says so, otherwise Mac.
   const systemPlatform = (userAgent) => /windows/i.test(userAgent || '') ? 'windows' : 'macos';
 
@@ -189,7 +238,8 @@
 
   const rules = {
     safeHttps, isPublicRelease, isPrerelease, platformState, fileNameOf, formatBytes,
-    firstRunSteps, panelView, summary, isManifest, systemPlatform, initialPlatform
+    firstRunSteps, panelView, summary, isManifest, systemPlatform, initialPlatform, installView, INSTALLERS,
+    alternativesOf
   };
 
   if (typeof document === 'undefined') {
@@ -258,8 +308,17 @@
     if (typeof view.tabLabel === 'string') $(`#tab-${platform} .tab-status`).textContent = view.tabLabel;
     row('[data-file-row]', '[data-file]', download?.fileName);
     row('[data-size-row]', '[data-size]', download?.size);
+    const install = installView(platform, info);
+    $('[data-install-block]', panel).hidden = !install;
+    if (install) {
+      $('[data-install-where]', panel).textContent = install.where;
+      $('[data-install-command]', panel).textContent = install.command;
+      $('[data-install-explanation]', panel).textContent = install.explanation;
+      $('[data-install-script]', panel).setAttribute('href', install.script);
+    }
     const link = $('[data-download]', panel);
     link.hidden = !download;
+    $('[data-download-alt]', panel).hidden = !download;
     $('[data-unavailable]', panel).hidden = Boolean(download);
     $('[data-checksum-block]', panel).hidden = !download;
     $('[data-checksum]', panel).textContent = download ? download.sha256 : '';
@@ -283,6 +342,39 @@
         steps.append(item);
       }
     }
+    const alternatives = $('[data-alternatives]', panel);
+    const list = download ? download.alternatives : [];
+    alternatives.hidden = list.length === 0;
+    $('[data-alternative-list]', panel).replaceChildren(...list.map(alternativeElement));
+  }
+
+  // One other file of the release, as a closed disclosure: link, size, checksum, its own steps.
+  function alternativeElement(alt) {
+    const make = (tag, className, text) => {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined) element.textContent = text;
+      return element;
+    };
+    const details = make('details', 'alternative');
+    const summary = make('summary');
+    summary.append(make('span', '', alt.label), make('span', 'alternative-meta', [alt.fileName, alt.size.replace(/ \(.*\)$/, '')].filter(Boolean).join(' · ')));
+    const body = make('div', 'alternative-body');
+    const link = make('a', 'text-link alternative-download', `Download ${alt.fileName} `);
+    link.href = alt.url;
+    link.rel = 'noopener noreferrer';
+    link.append(make('span', '', '↗'));
+    link.lastChild.setAttribute('aria-hidden', 'true');
+    body.append(link);
+    if (alt.size) body.append(make('p', 'alternative-size', `Size: ${alt.size}`));
+    body.append(make('span', 'meta-label', 'SHA-256'), make('code', 'alternative-checksum', alt.sha256));
+    if (alt.steps.length) {
+      const steps = make('ol', 'first-run');
+      steps.append(...alt.steps.map((step) => make('li', '', step)));
+      body.append(steps);
+    }
+    details.append(summary, body);
+    return details;
   }
 
   function renderManifest(data) {
@@ -345,6 +437,26 @@
     if (event.clientX < bounds.left || event.clientX > bounds.right ||
       event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
   });
+
+  $$('[data-copy-command]').forEach((button) => button.addEventListener('click', async () => {
+    const platform = button.dataset.copyCommand;
+    const info = manifest?.platforms?.[platform];
+    const install = info ? installView(platform, info) : null;
+    const code = $('[data-install-command]', button.closest('[data-release-panel]'));
+    const command = install ? install.command : code.textContent;
+    const shell = INSTALLERS[platform]?.shell || 'the terminal';
+    try {
+      await navigator.clipboard.writeText(command);
+      feedback.textContent = `Command copied. Paste it into ${shell}.`;
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      feedback.textContent = 'The command is selected. Copy it using your usual keyboard shortcut.';
+    }
+  }));
 
   $$('[data-copy-checksum]').forEach((button) => button.addEventListener('click', async () => {
     const platform = button.dataset.copyChecksum;
