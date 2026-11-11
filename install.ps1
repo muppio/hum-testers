@@ -22,11 +22,11 @@ param([switch]$NoStart)
 
 # BEGIN PINNED RELEASE (written by tools/generate-install-scripts.js from dist/releases.json; do not edit by hand)
   $HumRelease = @{
-    Version   = '0.6.39'
-    Url       = 'https://github.com/muppio/hum-testers/releases/download/v0.6.39/Hum-0.6.39-Windows-Setup.exe'
-    FileName  = 'Hum-0.6.39-Windows-Setup.exe'
-    SizeBytes = 79722329
-    Sha256    = '8ed5e1a373b1fc8f7f51cb6794299b8a4bc33dc3b89ef2bedc16779c6e35827b'
+    Version   = '0.6.40'
+    Url       = 'https://github.com/muppio/hum-testers/releases/download/v0.6.40/Hum-0.6.40-Windows-Setup.exe'
+    FileName  = 'Hum-0.6.40-Windows-Setup.exe'
+    SizeBytes = 79733235
+    Sha256    = '5493e4f2c9b40ab9a93f35df34223d383d2d3a48af8e9f0c6d828492e6e5b1e0'
     Kind      = 'setup'
   }
 # END PINNED RELEASE

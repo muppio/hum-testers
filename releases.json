@@ -27,33 +27,33 @@
       "name": "Windows",
       "status_label": "Pre-release testing",
       "tab_label": "Pre-release",
-      "description": "Version 0.6.39 is an unsigned pre-release for testers, with a per-user Setup. Hands-on testing on Windows is still in progress, so expect rough edges.",
+      "description": "Version 0.6.40 is an unsigned pre-release for testers, with a per-user Setup. Hands-on testing on Windows is still in progress, so expect rough edges.",
       "system": "64-bit Windows (so far checked on Windows 11)",
       "architecture": "x64",
-      "version_label": "Pre-release 0.6.39",
-      "details": "Version 0.6.39 is an unsigned pre-release for testers, built from the development line (commit a745087). The Windows download is a per-user Setup; a portable ZIP is also on the release. It is not code-signed, and most of the Windows checklist has not been tested yet.",
+      "version_label": "Pre-release 0.6.40",
+      "details": "Version 0.6.40 is an unsigned pre-release for testers. The Windows download is a per-user Setup; a portable ZIP is also on the release. It is not code-signed, and most of the Windows checklist has not been tested yet.",
       "checks": [
         "Not code-signed: Windows SmartScreen warns before a copy downloaded with a browser runs. The one-line install command doesn’t trigger that warning and still checks the SHA-256.",
         "Setup installs Hum for your Windows account only, with no administrator rights, adds it to the Start menu and includes an uninstaller.",
-        "On one Windows 11 PC with Smart App Control turned on, a downloaded copy of Hum passed its built-in self-check without being blocked. Other PCs may differ.",
+        "On one Windows 11 PC with Smart App Control turned on, a downloaded copy of the previous version (0.6.39) passed its built-in self-check without being blocked. Other PCs may differ.",
         "Live dictation into the Claude desktop app has been confirmed on Windows. Most other Windows checks (other apps, shortcuts, auto-send, wake, meetings) are still open.",
         "Speech recognition runs on the processor for now. The speech model (about 670 MB) is downloaded separately, inside Hum."
       ],
       "release": null,
       "prerelease": {
-        "version": "0.6.39",
-        "download_url": "https://github.com/muppio/hum-testers/releases/download/v0.6.39/Hum-0.6.39-Windows-Setup.exe",
-        "file_name": "Hum-0.6.39-Windows-Setup.exe",
-        "size_bytes": 79722329,
-        "sha256": "8ed5e1a373b1fc8f7f51cb6794299b8a4bc33dc3b89ef2bedc16779c6e35827b",
-        "notes_url": "https://github.com/muppio/hum-testers/releases/tag/v0.6.39",
+        "version": "0.6.40",
+        "download_url": "https://github.com/muppio/hum-testers/releases/download/v0.6.40/Hum-0.6.40-Windows-Setup.exe",
+        "file_name": "Hum-0.6.40-Windows-Setup.exe",
+        "size_bytes": 79733235,
+        "sha256": "5493e4f2c9b40ab9a93f35df34223d383d2d3a48af8e9f0c6d828492e6e5b1e0",
+        "notes_url": "https://github.com/muppio/hum-testers/releases/tag/v0.6.40",
         "alternatives": [
           {
             "label": "Portable ZIP (no installer)",
-            "download_url": "https://github.com/muppio/hum-testers/releases/download/v0.6.39/Hum-0.6.39-Windows.zip",
-            "file_name": "Hum-0.6.39-Windows.zip",
-            "size_bytes": 116080537,
-            "sha256": "20196338c293f30283445540a10bddb04e841877da338d0cf4d84f0be73f7c1c"
+            "download_url": "https://github.com/muppio/hum-testers/releases/download/v0.6.40/Hum-0.6.40-Windows.zip",
+            "file_name": "Hum-0.6.40-Windows.zip",
+            "size_bytes": 116099437,
+            "sha256": "7fa175b6aebd92f0c08f5df5b1ee3bf9feb9c69ebdfe48cd239d21e26fcb9015"
           }
         ]
       }
