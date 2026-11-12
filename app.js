@@ -438,6 +438,9 @@
       event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
   });
 
+  // Tells the page how a copy went (ok: on the clipboard; otherwise the text was selected).
+  const announceCopy = (button, ok) => button.dispatchEvent(new CustomEvent('hum:copied', { bubbles: true, detail: { ok } }));
+
   $$('[data-copy-command]').forEach((button) => button.addEventListener('click', async () => {
     const platform = button.dataset.copyCommand;
     const info = manifest?.platforms?.[platform];
@@ -448,6 +451,7 @@
     try {
       await navigator.clipboard.writeText(command);
       feedback.textContent = `Command copied. Paste it into ${shell}.`;
+      announceCopy(button, true);
     } catch {
       const range = document.createRange();
       range.selectNodeContents(code);
@@ -455,6 +459,7 @@
       selection.removeAllRanges();
       selection.addRange(range);
       feedback.textContent = 'The command is selected. Copy it using your usual keyboard shortcut.';
+      announceCopy(button, false);
     }
   }));
 
@@ -466,6 +471,7 @@
     try {
       await navigator.clipboard.writeText(download.sha256);
       feedback.textContent = 'Checksum copied. Compare it with the downloaded file’s SHA-256 value.';
+      announceCopy(button, true);
     } catch {
       const code = $('[data-checksum]', button.closest('[data-release-panel]'));
       const range = document.createRange();
@@ -474,6 +480,7 @@
       selection.removeAllRanges();
       selection.addRange(range);
       feedback.textContent = 'The checksum is selected. Copy it using your usual keyboard shortcut.';
+      announceCopy(button, false);
     }
   }));
 
